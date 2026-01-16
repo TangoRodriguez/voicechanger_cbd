@@ -279,7 +279,13 @@ const VoiceChangerStep10 = () => {
     await resumeContext();
 
     setIsProcessing(true);
-    setMessage("Processing (LPC Robot)
+    setMessage("Processing (LPC Robot)...");
+    await new Promise(r => setTimeout(r, 10));
+
+    const rawInput = originalBuffer.getChannelData(0);
+    const inputData = new Float32Array(rawInput.length);
+    inputData.set(rawInput);
+    
     for(let i=1; i<rawInput.length; i++) {
         inputData[i] = rawInput[i] - 0.95 * rawInput[i-1];
     }
