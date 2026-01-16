@@ -139,7 +139,7 @@ const VoiceChangerStep10 = () => {
   const [recording, setRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPlayingResult, setIsPlayingResult] = useState(false); 
-  const [message, setMessage] = useState("Step 10: 基本LPC合成 (ロボットボイス)");
+  const [message, setMessage] = useState("LPC Only (Robotic Voice)");
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -173,14 +173,14 @@ const VoiceChangerStep10 = () => {
         const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
         setOriginalBuffer(decodedBuffer);
         drawWaveform(decodedBuffer, canvasRef.current, "rgb(100, 200, 255)");
-        setMessage("録音完了。変換してください。");
+        setMessage("Recording finished. Please process.");
         setProcessedBuffer(null);
       };
       recorder.start();
       mediaRecorderRef.current = recorder;
       setRecording(true);
-      setMessage("録音中...");
-    } catch (err) { setMessage("マイクエラー: " + err); }
+      setMessage("Recording...");
+    } catch (err) { setMessage("Mic Error: " + err); }
   };
 
   const stopRecording = () => {
@@ -200,9 +200,9 @@ const VoiceChangerStep10 = () => {
       const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
       setOriginalBuffer(decodedBuffer);
       drawWaveform(decodedBuffer, canvasRef.current, "rgb(100, 200, 255)");
-      setMessage(`ロード完了: ${file.name}`);
+      setMessage(`Loaded: ${file.name}`);
       setProcessedBuffer(null);
-    } catch (e) { setMessage("ファイルエラー"); }
+    } catch (e) { setMessage("File Error"); }
     finally { setIsProcessing(false); if(fileInputRef.current) fileInputRef.current.value = ''; }
   };
 
@@ -211,15 +211,26 @@ const VoiceChangerStep10 = () => {
     await resumeContext();
     setIsProcessing(true);
     try {
-      const response = await fetch(`/${filename}`);
+      // Force correct path for GitHub Pages
+      const isGithub = window.location.hostname.includes('github.io');
+      const basePath = isGithub ? '/voicechanger_cbd/' : '/';
+      const url = `${basePath}${filename}`;
+
+      console.log(`Loading audio from: ${url}`);
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status} url: ${url}`);
+      }
+
       const arrayBuffer = await response.arrayBuffer();
       const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
       setOriginalBuffer(decodedBuffer);
       if (canvasRef.current) drawWaveform(decodedBuffer, canvasRef.current, "rgb(100, 200, 255)");
-      setMessage(`サンプルロード完了: ${filename}`);
+      setMessage(`Sample Loaded: ${filename}`);
       setProcessedBuffer(null);
     } catch (err) {
-      setMessage("ロード失敗: " + String(err));
+      setMessage("Load Failed: " + String(err));
     } finally {
       setIsProcessing(false);
     }
@@ -227,7 +238,9 @@ const VoiceChangerStep10 = () => {
 
   const playAudio = async (buffer: AudioBuffer | null) => {
     if (!audioContext || !buffer) return;
+    
     await resumeContext();
+
     if (sourceRef.current) { try { sourceRef.current.stop(); } catch(e) {} }
     const source = audioContext.createBufferSource();
     source.buffer = buffer;
@@ -252,21 +265,21 @@ const VoiceChangerStep10 = () => {
       URL.revokeObjectURL(url);
   };
 
+  const testSpeakers = async () => {
+    let ctx = audioContext;
+    if (!ctx || ctx.state === 'closed') {
+        const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+        ctx = new Ctx();
+        setAudioContext(ctx);
+        addLog("Created new AudioContext");
+    }
   // --- CORE PROCESSING STEP 10 (THE ROBOTIC ONE) ---
   const processAudio = async () => {
     if (!audioContext || !originalBuffer) return;
     await resumeContext();
 
     setIsProcessing(true);
-    setMessage("Step 10: ロボットボイス変換中...");
-    await new Promise(r => setTimeout(r, 50));
-
-    const sampleRate = audioContext.sampleRate;
-    
-    // Pre-emphasis (Standard practice, even in early steps)
-    const rawInput = originalBuffer.getChannelData(0);
-    const inputData = new Float32Array(rawInput.length);
-    inputData[0] = rawInput[0];
+    setMessage("Processing (LPC Robot)
     for(let i=1; i<rawInput.length; i++) {
         inputData[i] = rawInput[i] - 0.95 * rawInput[i-1];
     }
@@ -379,7 +392,13 @@ const VoiceChangerStep10 = () => {
 
     // Normalize
     let maxPeak = 0;
-    for(let i=0; i<finalData.length; i++) maxPeak = Math.max(maxPeak, Math.abs(finalData[i]));
+    let hasNaN = false;
+    for(let i=0; i<finalData.length; i++) {
+        const val = Math.abs(finalData[i]);
+        if (Number.isNaN(val)) hasNaN = true;
+        else maxPeak = Math.max(maxPeak, val);
+    }
+
     if (maxPeak > 0.001) {
         const normGain = 0.9 / maxPeak;
         for(let i=0; i<finalData.length; i++) finalData[i] *= normGain;
@@ -390,7 +409,7 @@ const VoiceChangerStep10 = () => {
     
     setProcessedBuffer(outBuf);
     setIsProcessing(false);
-    setMessage("完了。ロボットボイスが生成されました。");
+    setMessage("Conversion Complete (Robotic Voice)");
   };
 
   const drawWaveform = (buffer: AudioBuffer, canvas: HTMLCanvasElement | null, color: string) => {
@@ -425,7 +444,7 @@ const VoiceChangerStep10 = () => {
       <header className="mb-6 border-b pb-4">
         <h1 className="text-2xl font-bold flex items-center gap-2 text-gray-700">
           <Bot className="w-6 h-6" />
-          Step 10: Robotic LPC
+          Step 10: Robotic LPC (v2)
         </h1>
         <p className="text-gray-600 mt-2 text-sm">
           教科書通りの単純なLPC分析合成。帯域幅拡大や人間的な音源補正を行わないため、
@@ -522,10 +541,24 @@ const VoiceChangerStep10 = () => {
                 <button onClick={downloadAudio} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
                      <Download className="w-4 h-4" /> 保存
                 </button>
+                <button
+                   onClick={testSpeakers}
+                   className="px-4 py-3 bg-gray-600 text-white rounded hover:bg-gray-700 font-bold text-sm flex items-center gap-2"
+                >
+                   🔊 テスト音
+                </button>
                 </>
             ) : (
                 <div className="text-gray-400 text-sm bg-gray-100 px-4 py-2 rounded">変換待ち...</div>
             )}
+         </div>
+
+         {/* Debug Log Container - Forced Visible */}
+         <div className="mt-4 w-full p-2 bg-black text-green-400 font-mono text-xs rounded border border-gray-700 overflow-y-auto max-h-32">
+            <div className="font-bold border-b border-gray-700 mb-1">Debug Output:</div>
+            {debugLogs.length === 0 ? <div>(No logs yet)</div> : debugLogs.map((log, i) => (
+                <div key={i} className="whitespace-pre-wrap">{log}</div>
+            ))}
          </div>
       </div>
     </div>

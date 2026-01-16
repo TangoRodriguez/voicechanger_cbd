@@ -247,7 +247,7 @@ const VoiceChangerStep14 = () => {
   const [recording, setRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPlayingResult, setIsPlayingResult] = useState(false); 
-  const [message, setMessage] = useState("Step 14: 脱ブザー音・有機的な声質の生成");
+  const [message, setMessage] = useState("LPC Advanced (Organic Voice)");
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -281,14 +281,14 @@ const VoiceChangerStep14 = () => {
         const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
         setOriginalBuffer(decodedBuffer);
         drawWaveform(decodedBuffer, canvasRef.current, "rgb(100, 200, 255)");
-        setMessage("録音完了。変換を実行してください。");
+        setMessage("Recording finished. Please process.");
         setProcessedBuffer(null);
       };
       recorder.start();
       mediaRecorderRef.current = recorder;
       setRecording(true);
-      setMessage("録音中...");
-    } catch (err) { setMessage("マイクエラー: " + err); }
+      setMessage("Recording...");
+    } catch (err) { setMessage("Mic Error: " + err); }
   };
 
   const stopRecording = () => {
@@ -308,9 +308,9 @@ const VoiceChangerStep14 = () => {
       const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
       setOriginalBuffer(decodedBuffer);
       drawWaveform(decodedBuffer, canvasRef.current, "rgb(100, 200, 255)");
-      setMessage(`ロード完了: ${file.name}`);
+      setMessage(`Loaded: ${file.name}`);
       setProcessedBuffer(null);
-    } catch (e) { setMessage("ファイルエラー"); }
+    } catch (e) { setMessage("File Error"); }
     finally { setIsProcessing(false); if(fileInputRef.current) fileInputRef.current.value = ''; }
   };
 
@@ -319,7 +319,18 @@ const VoiceChangerStep14 = () => {
     await resumeContext();
     setIsProcessing(true);
     try {
-      const response = await fetch(`/${filename}`);
+      // Force correct path for GitHub Pages
+      const isGithub = window.location.hostname.includes('github.io');
+      const basePath = isGithub ? '/voicechanger_cbd/' : '/';
+      const url = `${basePath}${filename}`;
+      
+      console.log(`Loading audio from: ${url}`);
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status} url: ${url}`);
+      }
+
       const arrayBuffer = await response.arrayBuffer();
       const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
       setOriginalBuffer(decodedBuffer);
@@ -334,8 +345,17 @@ const VoiceChangerStep14 = () => {
   };
 
   const playAudio = async (buffer: AudioBuffer | null) => {
-    if (!audioContext || !buffer) return;
+    if (!audioContext) {
+        addLog("Error: No AudioContext");
+        return;
+    }
+    if (!buffer) {
+        addLog("Error: No Buffer to play");
+        return;
+    }
     await resumeContext();
+    addLog(`Playing... Ctx State: ${audioContext.state}, Buffer Length: ${buffer.length}`);
+
     if (sourceRef.current) { try { sourceRef.current.stop(); } catch(e) {} }
     const source = audioContext.createBufferSource();
     source.buffer = buffer;
@@ -359,7 +379,20 @@ const VoiceChangerStep14 = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
   };
-
+  const testSpeakers = async () => {
+    if (!audioContext) return;
+    await resumeContext();
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 440;
+    gain.gain.value = 0.5;
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start();
+    osc.stop(audioContext.currentTime + 0.5);
+    addLog("Testing speakers: Beep!");
+  };
   // --- CORE PROCESSING STEP 14 ---
   const processAudio = async () => {
     if (!audioContext || !originalBuffer) return;
@@ -595,7 +628,7 @@ const VoiceChangerStep14 = () => {
     
     setProcessedBuffer(outBuf);
     setIsProcessing(false);
-    setMessage("完了。有機的な質感へ変換しました。");
+    setMessage("Conversion Complete (Organic Voice).");
   };
 
   const drawWaveform = (buffer: AudioBuffer, canvas: HTMLCanvasElement | null, color: string) => {
@@ -630,7 +663,7 @@ const VoiceChangerStep14 = () => {
       <header className="mb-6 border-b pb-4">
         <h1 className="text-2xl font-bold flex items-center gap-2 text-indigo-600">
           <User className="w-6 h-6 text-green-500" />
-          Step 14: Organic Voice (Soft Resonance)
+          Step 14: Organic Voice (Soft Resonance) (v2)
         </h1>
         <p className="text-gray-600 mt-2 text-sm">
           共鳴の鋭さを抑え（帯域幅拡大）、息をピッチ同期させることで、ブザー感を消し去り人間らしい質感を作ります。
@@ -777,11 +810,22 @@ const VoiceChangerStep14 = () => {
                 <button onClick={downloadAudio} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
                      <Download className="w-4 h-4" /> 保存
                 </button>
+                <button onClick={testSpeakers} className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-full font-bold shadow-lg text-sm">
+                     🔊 テスト音
+                </button>
                 </>
             ) : (
                 <div className="text-gray-400 text-sm bg-gray-100 px-4 py-2 rounded">変換待ち...</div>
             )}
          </div>
+
+          {/* Debug Logs Display */}
+          <div className="mt-4 p-2 bg-gray-900 text-green-400 font-mono text-xs rounded border border-gray-700 text-left">
+            <div>Debug Logs:</div>
+            {debugLogs.map((log, i) => (
+                <div key={i}>{log}</div>
+            ))}
+          </div>
       </div>
 
     </div>
