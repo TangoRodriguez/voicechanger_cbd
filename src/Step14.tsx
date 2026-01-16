@@ -138,6 +138,16 @@ const calculateEnergy = (frame: Float32Array) => {
   return sum / frame.length;
 };
 
+const calculateZCR = (frame: Float32Array) => {
+    let zcr = 0;
+    for (let i = 1; i < frame.length; i++) {
+        if ((frame[i] >= 0 && frame[i-1] < 0) || (frame[i] < 0 && frame[i-1] >= 0)) {
+            zcr++;
+        }
+    }
+    return zcr / (frame.length - 1);
+};
+
 const estimatePitchRobust = (frame: Float32Array, sampleRate: number) => {
   const n = frame.length;
   const minFreq = 80; const maxFreq = 600;
@@ -449,10 +459,11 @@ const VoiceChangerStep14 = () => {
       }
       
       const { pitch, periodicity } = estimatePitchRobust(frame, sampleRate);
+      const zcr = calculateZCR(frame);
       
       // Fixed Voicing Logic
       let currentVoicing = 0;
-      if (periodicity > baseVoicingThreshold && energy > 0.0000001) {
+      if (periodicity > baseVoicingThreshold && energy > 0.0000001 && zcr < 0.35) {
           currentVoicing = 1.0;
           voicingHoldCounter = 15; // Hold longer for stability
       } else if (voicingHoldCounter > 0) {

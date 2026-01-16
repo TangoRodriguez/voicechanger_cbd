@@ -263,6 +263,11 @@ const VoiceChangerChipmunk = () => {
                     </button>
                 ))}
             </div>
+            {originalBuffer && (
+                <button onClick={() => playAudio(originalBuffer)} className="text-gray-600 font-bold text-sm flex items-center gap-1 hover:underline ml-4">
+                    <Play className="w-4 h-4"/> Org
+                </button>
+            )}
          </div>
          <div className="bg-gray-900 rounded h-20 w-full relative">
             <canvas ref={canvasRef} width={600} height={80} className="w-full h-full" />
