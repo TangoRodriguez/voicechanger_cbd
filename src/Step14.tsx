@@ -345,16 +345,8 @@ const VoiceChangerStep14 = () => {
   };
 
   const playAudio = async (buffer: AudioBuffer | null) => {
-    if (!audioContext) {
-        addLog("Error: No AudioContext");
-        return;
-    }
-    if (!buffer) {
-        addLog("Error: No Buffer to play");
-        return;
-    }
+    if (!audioContext || !buffer) return;
     await resumeContext();
-    addLog(`Playing... Ctx State: ${audioContext.state}, Buffer Length: ${buffer.length}`);
 
     if (sourceRef.current) { try { sourceRef.current.stop(); } catch(e) {} }
     const source = audioContext.createBufferSource();
@@ -379,20 +371,7 @@ const VoiceChangerStep14 = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
   };
-  const testSpeakers = async () => {
-    if (!audioContext) return;
-    await resumeContext();
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = 440;
-    gain.gain.value = 0.5;
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    osc.start();
-    osc.stop(audioContext.currentTime + 0.5);
-    addLog("Testing speakers: Beep!");
-  };
+
   // --- CORE PROCESSING STEP 14 ---
   const processAudio = async () => {
     if (!audioContext || !originalBuffer) return;
@@ -810,22 +789,14 @@ const VoiceChangerStep14 = () => {
                 <button onClick={downloadAudio} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
                      <Download className="w-4 h-4" /> 保存
                 </button>
-                <button onClick={testSpeakers} className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-full font-bold shadow-lg text-sm">
-                     🔊 テスト音
-                </button>
+
                 </>
             ) : (
                 <div className="text-gray-400 text-sm bg-gray-100 px-4 py-2 rounded">変換待ち...</div>
             )}
          </div>
 
-          {/* Debug Logs Display */}
-          <div className="mt-4 p-2 bg-gray-900 text-green-400 font-mono text-xs rounded border border-gray-700 text-left">
-            <div>Debug Logs:</div>
-            {debugLogs.map((log, i) => (
-                <div key={i}>{log}</div>
-            ))}
-          </div>
+
       </div>
 
     </div>

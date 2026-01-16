@@ -265,15 +265,7 @@ const VoiceChangerStep10 = () => {
       URL.revokeObjectURL(url);
   };
 
-  const testSpeakers = async () => {
-    let ctx = audioContext;
-    if (!ctx || ctx.state === 'closed') {
-        const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-        ctx = new Ctx();
-        setAudioContext(ctx);
-        addLog("Created new AudioContext");
-    }
-  };
+
 
   // --- CORE PROCESSING STEP 10 (THE ROBOTIC ONE) ---
   const processAudio = async () => {
@@ -285,6 +277,7 @@ const VoiceChangerStep10 = () => {
     await new Promise(r => setTimeout(r, 10));
 
     const rawInput = originalBuffer.getChannelData(0);
+    const sampleRate = originalBuffer.sampleRate;
     const inputData = new Float32Array(rawInput.length);
     inputData.set(rawInput);
     
@@ -549,25 +542,14 @@ const VoiceChangerStep10 = () => {
                 <button onClick={downloadAudio} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
                      <Download className="w-4 h-4" /> 保存
                 </button>
-                <button
-                   onClick={testSpeakers}
-                   className="px-4 py-3 bg-gray-600 text-white rounded hover:bg-gray-700 font-bold text-sm flex items-center gap-2"
-                >
-                   🔊 テスト音
-                </button>
+
                 </>
             ) : (
                 <div className="text-gray-400 text-sm bg-gray-100 px-4 py-2 rounded">変換待ち...</div>
             )}
          </div>
 
-         {/* Debug Log Container - Forced Visible */}
-         <div className="mt-4 w-full p-2 bg-black text-green-400 font-mono text-xs rounded border border-gray-700 overflow-y-auto max-h-32">
-            <div className="font-bold border-b border-gray-700 mb-1">Debug Output:</div>
-            {debugLogs.length === 0 ? <div>(No logs yet)</div> : debugLogs.map((log, i) => (
-                <div key={i} className="whitespace-pre-wrap">{log}</div>
-            ))}
-         </div>
+
       </div>
     </div>
   );
