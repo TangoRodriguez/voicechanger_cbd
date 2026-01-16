@@ -273,6 +273,8 @@ const VoiceChangerStep10 = () => {
         setAudioContext(ctx);
         addLog("Created new AudioContext");
     }
+  };
+
   // --- CORE PROCESSING STEP 10 (THE ROBOTIC ONE) ---
   const processAudio = async () => {
     if (!audioContext || !originalBuffer) return;
