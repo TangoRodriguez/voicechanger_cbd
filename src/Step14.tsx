@@ -606,15 +606,19 @@ const VoiceChangerStep14 = () => {
         s = eqMid.process(s);
         
         // Intelligent Volume Gain with Soft Clipping
-        // 1. Apply user volume
-        s *= outputVolume;
+        // 1. Apply user volume (Boosted base gain)
+        // Previous Tanh compressed too early. We boost signal MORE before tanh
+        // to push "loudness" up against the ceiling.
+        s *= (outputVolume * 1.5); 
 
-        // 2. Soft Clip (Tanh) to preventing harsh distortion
-        // This allows perceived volume to increase beyond the hard limit
-        // by compressing the dynamic range at high amplitudes.
+        // 2. Soft Clip (Tanh)
+        // Tanh is nice but can be quiet if input isn't hot enough.
         s = Math.tanh(s); 
+        
+        // 3. Make up gain? No, tanh(x) is max 1.
+        // But if s was huge, tanh(s) is 1. That's fine.
 
-        // 3. Final safety clip (just in case)
+        // 4. Final safety clip
         if (s > 0.99) s = 0.99;
         if (s < -0.99) s = -0.99;
         
