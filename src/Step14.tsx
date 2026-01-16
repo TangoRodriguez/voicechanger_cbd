@@ -246,8 +246,8 @@ const VoiceChangerStep14 = () => {
   
   // EQ & Breath
   const [eqLowGain, setEqLowGain] = useState(5.0); 
-  const [eqHighGain, setEqHighGain] = useState(1.0); // Mild highs
-  const [breathMix, setBreathMix] = useState(0.25); // Restored breathiness
+  const [eqHighGain, setEqHighGain] = useState(3.0); // Boost highs for clarity
+  const [breathMix, setBreathMix] = useState(0.12); // Reduced breathiness for less noise
 
   const [outputVolume, setOutputVolume] = useState(3.5);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
@@ -345,10 +345,10 @@ const VoiceChangerStep14 = () => {
       const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
       setOriginalBuffer(decodedBuffer);
       if (canvasRef.current) drawWaveform(decodedBuffer, canvasRef.current, "rgb(100, 200, 255)");
-      setMessage(`サンプルロード完了: ${filename}`);
+      setMessage(`Sample Loaded: ${filename}`);
       setProcessedBuffer(null);
     } catch (err) {
-      setMessage("ロード失敗: " + String(err));
+      setMessage("Load Failed: " + String(err));
     } finally {
       setIsProcessing(false);
     }
@@ -388,7 +388,7 @@ const VoiceChangerStep14 = () => {
     await resumeContext();
 
     setIsProcessing(true);
-    setMessage("Step 14: 共鳴を和らげ有機的な声に変換中...");
+    setMessage("Processing - Organic Conversion...");
     await new Promise(r => setTimeout(r, 50));
 
     const sampleRate = audioContext.sampleRate;
@@ -417,11 +417,11 @@ const VoiceChangerStep14 = () => {
     // State
     let filterState = new Float32Array(order).fill(0);
     // Breath Filter: BandPass-like (HighPass + LowPass) for "Airy" sound, not "Hissy" static
-    const breathHighPass = new BiquadFilter(1, 2000, sampleRate, 0.7, 0); // Allow more body (2k+)
-    const breathLowPass = new BiquadFilter(0, 7000, sampleRate, 0.5, 0);  // Cut harsh digital hiss (>7k)
+    const breathHighPass = new BiquadFilter(1, 4000, sampleRate, 0.7, 0); // Higher cutoff for minimal mid-noise
+    const breathLowPass = new BiquadFilter(0, 9000, sampleRate, 0.5, 0);  // Open up top end
     
-    // Filter State for Pulse Shaping - 3500Hz is smoother, removes "lo-fi" frizz
-    const pulseLowPass = new BiquadFilter(0, 3500, sampleRate, 0.7, 0); 
+    // Filter State for Pulse Shaping - Higher cutoff for less muffled sound
+    const pulseLowPass = new BiquadFilter(0, 6000, sampleRate, 0.7, 0); 
 
     let phase = 0;
     const excitationPitchRatio = pitchShiftRatio / formantShiftRatio;
@@ -549,7 +549,7 @@ const VoiceChangerStep14 = () => {
           
           // Mix
           const voiced = pulse;
-          const unvoiced = noise * 0.6; // Slightly louder noise base
+          const unvoiced = noise * 0.35; // Reduced noise base (was 0.6)
           
           // Natural Mix
           let excitationSample = voiced * smoothedVoicing + unvoiced * (1.0 - smoothedVoicing) * 0.4;
@@ -653,30 +653,30 @@ const VoiceChangerStep14 = () => {
       <header className="mb-6 border-b pb-4">
         <h1 className="text-2xl font-bold flex items-center gap-2 text-indigo-600">
           <User className="w-6 h-6 text-green-500" />
-          Step 14: Organic Voice (Soft Resonance) (v2)
+          Organic Voice (Soft Resonance) (v2)
         </h1>
         <p className="text-gray-600 mt-2 text-sm">
-          共鳴の鋭さを抑え（帯域幅拡大）、息をピッチ同期させることで、ブザー感を消し去り人間らしい質感を作ります。
+          Reduces resonance sharpness (bandwidth expansion) and pitch-syncs breath noise to eliminate buzzer-like artifacts and create a human-like texture.
         </p>
       </header>
 
       {/* 1. Input */}
       <div className="bg-white p-5 rounded-xl shadow-sm mb-6">
-         <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Mic className="w-4 h-4"/> 音声入力</h2>
+         <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Mic className="w-4 h-4"/> Input Source</h2>
          <div className="flex flex-wrap gap-3 mb-4">
             {!recording ? (
                 <button onClick={startRecordingFixed} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow transition">
-                  <Mic className="w-4 h-4" /> 録音開始
+                  <Mic className="w-4 h-4" /> Record
                 </button>
             ) : (
                 <button onClick={stopRecording} className="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-full flex items-center gap-2 animate-pulse shadow transition">
-                  <StopCircle className="w-4 h-4" /> 停止
+                  <StopCircle className="w-4 h-4" /> Stop
                 </button>
             )}
             <span className="text-gray-300 self-center">|</span>
             <input type="file" accept="audio/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
             <button onClick={() => fileInputRef.current?.click()} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 text-sm">
-                <FileAudio className="w-4 h-4" /> ファイル
+                <FileAudio className="w-4 h-4" /> File
             </button>
             <div className="flex flex-wrap gap-2 items-center ml-2 pl-2 border-l border-gray-200">
                 <span className="text-xs text-gray-400 font-bold">SAMPLES:</span>
@@ -692,7 +692,7 @@ const VoiceChangerStep14 = () => {
             </div>
             {originalBuffer && (
                 <button onClick={() => playAudio(originalBuffer)} className="text-indigo-600 font-bold text-sm flex items-center gap-1 hover:underline">
-                    <Volume2 className="w-4 h-4"/> 原音再生
+                    <Volume2 className="w-4 h-4"/> Play Org
                 </button>
             )}
          </div>
@@ -703,14 +703,14 @@ const VoiceChangerStep14 = () => {
 
       {/* 2. Controls */}
       <div className="bg-white p-5 rounded-xl shadow-sm mb-6">
-        <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Sliders className="w-4 h-4"/> 調整パラメータ</h2>
+        <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Sliders className="w-4 h-4"/> Parameters</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4 border-r md:pr-4 border-gray-200">
-                <h3 className="text-sm font-bold text-gray-500">質感・柔らかさ (New)</h3>
+                <h3 className="text-sm font-bold text-gray-500">Quality & Texture (New)</h3>
                 <div>
                     <label className="flex justify-between text-sm font-semibold mb-1 text-green-600">
-                        <span>柔らかさ (Resonance Soft)</span>
+                        <span>Softness (Resonance)</span>
                         <span>{bandwidthExpansion.toFixed(3)}</span>
                     </label>
                     <div className="flex items-center gap-2">
@@ -718,50 +718,50 @@ const VoiceChangerStep14 = () => {
                         <input type="range" min="0.950" max="0.995" step="0.001" value={bandwidthExpansion} onChange={e => setBandwidthExpansion(Number(e.target.value))} className="w-full accent-green-500"/>
                         <span className="text-xs text-gray-400">Soft</span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">値を下げると金属音が減り、こもった柔らかい音になります。</p>
+                    <p className="text-xs text-gray-400 mt-1">Lower values reduce metallic sound, creating a softer tone.</p>
                 </div>
                 <div>
                     <label className="flex justify-between text-sm font-semibold mb-1 text-red-600">
-                        <span>パルス強度</span>
+                        <span>Pulse Strength</span>
                         <span>x{pulseGainBoost.toFixed(2)}</span>
                     </label>
                     <input type="range" min="1.0" max="2.0" step="0.05" value={pulseGainBoost} onChange={e => setPulseGainBoost(Number(e.target.value))} className="w-full accent-red-500"/>
                 </div>
                 <div>
                     <label className="flex justify-between text-sm font-semibold mb-1 text-gray-900">
-                        <span>出力音量 (Volume)</span>
+                        <span>Output Volume</span>
                         <span>x{outputVolume.toFixed(2)}</span>
                     </label>
-                    <input type="range" min="1.0" max="2.0" step="0.05" value={outputVolume} onChange={e => setOutputVolume(Number(e.target.value))} className="w-full accent-black"/>
+                    <input type="range" min="1.0" max="5.0" step="0.1" value={outputVolume} onChange={e => setOutputVolume(Number(e.target.value))} className="w-full accent-black"/>
                 </div>
             </div>
             
             <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-500">基本設定</h3>
+                <h3 className="text-sm font-bold text-gray-500">Basic Settings</h3>
                 <div>
                     <label className="flex justify-between text-sm font-semibold mb-1 text-purple-700">
-                        <span>ピッチ (x1.45)</span>
+                        <span>Pitch (x1.45)</span>
                         <span>x{pitchShiftRatio.toFixed(2)}</span>
                     </label>
                     <input type="range" min="0.5" max="2.0" step="0.05" value={pitchShiftRatio} onChange={e => setPitchShiftRatio(Number(e.target.value))} className="w-full accent-purple-600"/>
                 </div>
                 <div>
                     <label className="flex justify-between text-sm font-semibold mb-1 text-green-700">
-                        <span>フォルマント (x1.15)</span>
+                        <span>Formant (x1.15)</span>
                         <span>x{formantShiftRatio.toFixed(2)}</span>
                     </label>
                     <input type="range" min="0.8" max="1.5" step="0.05" value={formantShiftRatio} onChange={e => setFormantShiftRatio(Number(e.target.value))} className="w-full accent-green-600"/>
                 </div>
                 <div>
                     <label className="flex justify-between text-sm font-semibold mb-1 text-teal-700">
-                        <span>LPC解像度</span>
+                        <span>LPC Order</span>
                         <span>{lpcOrder}</span>
                     </label>
                     <input type="range" min="16" max="64" step="4" value={lpcOrder} onChange={e => setLpcOrder(Number(e.target.value))} className="w-full accent-teal-600"/>
                 </div>
                 <div>
                     <label className="flex justify-between text-sm font-semibold mb-1 text-gray-700">
-                        <span>息成分 (Breath)</span>
+                        <span>Breath Mix</span>
                         <span>{(breathMix * 100).toFixed(0)}%</span>
                     </label>
                     <input type="range" min="0" max="0.3" step="0.01" value={breathMix} onChange={e => setBreathMix(Number(e.target.value))} className="w-full accent-gray-500"/>
@@ -775,35 +775,35 @@ const VoiceChangerStep14 = () => {
             className={`mt-6 w-full py-3 rounded-lg font-bold text-white flex justify-center items-center gap-2 transition ${!originalBuffer ? 'bg-gray-300' : 'bg-gradient-to-r from-green-500 to-teal-500 hover:scale-[1.02] shadow-lg'}`}
         >
             {isProcessing ? <Loader2 className="animate-spin" /> : <Zap />}
-            変換実行 (Soft Resonance)
+            Convert (Soft Resonance)
         </button>
         <p className="text-center text-xs text-gray-400 mt-2">{message}</p>
       </div>
 
       {/* 3. Output */}
       <div className="bg-white p-5 rounded-xl shadow-sm border-t-4 border-indigo-500">
-         <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Volume2 className="w-4 h-4"/> 最終結果</h2>
+         <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Volume2 className="w-4 h-4"/> Final Result</h2>
          
          <div className="flex justify-center gap-4">
             {processedBuffer ? (
                 <>
                 {isPlayingResult ? (
                     <button onClick={stopAudio} className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
-                        <Square className="fill-current w-4 h-4" /> 停止
+                        <Square className="fill-current w-4 h-4" /> Stop
                     </button>
                 ) : (
                     <button onClick={() => playAudio(processedBuffer)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-full font-bold shadow-lg flex items-center gap-2 transform hover:scale-105 transition">
-                        <Play className="fill-current" /> 結果を再生
+                        <Play className="fill-current" /> Play Result
                     </button>
                 )}
                 
                 <button onClick={downloadAudio} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
-                     <Download className="w-4 h-4" /> 保存
+                     <Download className="w-4 h-4" /> Save
                 </button>
 
                 </>
             ) : (
-                <div className="text-gray-400 text-sm bg-gray-100 px-4 py-2 rounded">変換待ち...</div>
+                <div className="text-gray-400 text-sm bg-gray-100 px-4 py-2 rounded">Waiting for conversion...</div>
             )}
          </div>
 

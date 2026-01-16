@@ -448,27 +448,26 @@ const VoiceChangerStep10 = () => {
           Step 10: Robotic LPC (v2)
         </h1>
         <p className="text-gray-600 mt-2 text-sm">
-          教科書通りの単純なLPC分析合成。帯域幅拡大や人間的な音源補正を行わないため、
-          鋭い共鳴とブザーのような機械音になります（比較用）。
+          Standard LPC analysis/synthesis from textbook. No bandwidth expansion or humanizing corrections, resulting in sharp resonance and buzzy mechanical sound.
         </p>
       </header>
 
       {/* Input */}
       <div className="bg-white p-5 rounded-xl shadow-sm mb-6">
-         <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Mic className="w-4 h-4"/> 音声入力</h2>
+         <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Mic className="w-4 h-4"/> Input Source</h2>
          <div className="flex flex-wrap gap-3 mb-4">
             {!recording ? (
                 <button onClick={startRecordingFixed} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow transition">
-                  <Mic className="w-4 h-4" /> 録音開始
+                  <Mic className="w-4 h-4" /> Record
                 </button>
             ) : (
                 <button onClick={stopRecording} className="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-full flex items-center gap-2 animate-pulse shadow transition">
-                  <StopCircle className="w-4 h-4" /> 停止
+                  <StopCircle className="w-4 h-4" /> Stop
                 </button>
             )}
             <input type="file" accept="audio/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
             <button onClick={() => fileInputRef.current?.click()} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 text-sm">
-                <FileAudio className="w-4 h-4" /> ファイル
+                <FileAudio className="w-4 h-4" /> File
             </button>
 
             <div className="flex flex-wrap gap-2 items-center ml-2 pl-2 border-l border-gray-200">
@@ -485,7 +484,7 @@ const VoiceChangerStep10 = () => {
             </div>
             {originalBuffer && (
                 <button onClick={() => playAudio(originalBuffer)} className="text-gray-600 font-bold text-sm flex items-center gap-1 hover:underline">
-                    <Volume2 className="w-4 h-4"/> 原音再生
+                    <Volume2 className="w-4 h-4"/> Play Org
                 </button>
             )}
          </div>
@@ -496,18 +495,18 @@ const VoiceChangerStep10 = () => {
 
       {/* Controls */}
       <div className="bg-white p-5 rounded-xl shadow-sm mb-6">
-        <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Sliders className="w-4 h-4"/> パラメータ</h2>
+        <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Sliders className="w-4 h-4"/> Parameters</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <label className="flex justify-between text-sm font-semibold mb-1 text-gray-700">
-                    <span>ピッチ (x1.45)</span>
+                    <span>Pitch (x1.45)</span>
                     <span>x{pitchShiftRatio.toFixed(2)}</span>
                 </label>
                 <input type="range" min="0.5" max="2.0" step="0.05" value={pitchShiftRatio} onChange={e => setPitchShiftRatio(Number(e.target.value))} className="w-full accent-gray-600"/>
             </div>
             <div>
                 <label className="flex justify-between text-sm font-semibold mb-1 text-gray-700">
-                    <span>LPC解像度</span>
+                    <span>LPC Order</span>
                     <span>{lpcOrder}</span>
                 </label>
                 <input type="range" min="16" max="64" step="4" value={lpcOrder} onChange={e => setLpcOrder(Number(e.target.value))} className="w-full accent-gray-600"/>
@@ -520,32 +519,32 @@ const VoiceChangerStep10 = () => {
             className={`mt-6 w-full py-3 rounded-lg font-bold text-white flex justify-center items-center gap-2 transition ${!originalBuffer ? 'bg-gray-300' : 'bg-gray-700 hover:bg-gray-800 shadow-lg'}`}
         >
             {isProcessing ? <Loader2 className="animate-spin" /> : <Zap />}
-            変換実行 (Robotic)
+            Convert (Robotic)
         </button>
       </div>
 
       {/* Output */}
       <div className="bg-white p-5 rounded-xl shadow-sm border-t-4 border-gray-500">
-         <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Volume2 className="w-4 h-4"/> 変換結果</h2>
+         <h2 className="font-bold text-lg mb-3 flex items-center gap-2"><Volume2 className="w-4 h-4"/> Result</h2>
          <div className="flex justify-center gap-4">
             {processedBuffer ? (
                 <>
                 {isPlayingResult ? (
                     <button onClick={stopAudio} className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
-                        <Square className="fill-current w-4 h-4" /> 停止
+                        <Square className="fill-current w-4 h-4" /> Stop
                     </button>
                 ) : (
                     <button onClick={() => playAudio(processedBuffer)} className="bg-gray-700 hover:bg-gray-800 text-white px-8 py-3 rounded-full font-bold shadow-lg flex items-center gap-2 transform hover:scale-105 transition">
-                        <Play className="fill-current" /> 結果を再生
+                        <Play className="fill-current" /> Play Result
                     </button>
                 )}
                 <button onClick={downloadAudio} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
-                     <Download className="w-4 h-4" /> 保存
+                     <Download className="w-4 h-4" /> Save
                 </button>
 
                 </>
             ) : (
-                <div className="text-gray-400 text-sm bg-gray-100 px-4 py-2 rounded">変換待ち...</div>
+                <div className="text-gray-400 text-sm bg-gray-100 px-4 py-2 rounded">Waiting for conversion...</div>
             )}
          </div>
 
