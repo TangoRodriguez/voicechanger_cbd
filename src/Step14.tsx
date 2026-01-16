@@ -605,10 +605,18 @@ const VoiceChangerStep14 = () => {
         s = eqHigh.process(s);
         s = eqMid.process(s);
         
+        // Intelligent Volume Gain with Soft Clipping
+        // 1. Apply user volume
         s *= outputVolume;
-        
-        if (s > 0.98) s = 0.98;
-        if (s < -0.98) s = -0.98;
+
+        // 2. Soft Clip (Tanh) to preventing harsh distortion
+        // This allows perceived volume to increase beyond the hard limit
+        // by compressing the dynamic range at high amplitudes.
+        s = Math.tanh(s); 
+
+        // 3. Final safety clip (just in case)
+        if (s > 0.99) s = 0.99;
+        if (s < -0.99) s = -0.99;
         
         finalData[i] = s;
     }

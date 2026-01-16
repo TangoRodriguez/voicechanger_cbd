@@ -9,6 +9,7 @@ const SAMPLES = [
 
 const VoiceChangerChipmunk = () => {
   const [pitchRatio, setPitchRatio] = useState(1.5); 
+  const [outputVolume, setOutputVolume] = useState(1.0);
   
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [originalBuffer, setOriginalBuffer] = useState<AudioBuffer | null>(null);
@@ -112,7 +113,13 @@ const VoiceChangerChipmunk = () => {
     const source = offlineCtx.createBufferSource();
     source.buffer = originalBuffer;
     source.playbackRate.value = pitchRatio;
-    source.connect(offlineCtx.destination);
+
+    // Gain processing
+    const gainNode = offlineCtx.createGain();
+    gainNode.gain.value = outputVolume;
+
+    source.connect(gainNode);
+    gainNode.connect(offlineCtx.destination);
     source.start();
     
     const renderedBuffer = await offlineCtx.startRendering();
@@ -283,6 +290,14 @@ const VoiceChangerChipmunk = () => {
                 <span>x{pitchRatio.toFixed(2)}</span>
             </label>
             <input type="range" min="0.5" max="3.0" step="0.1" value={pitchRatio} onChange={e => setPitchRatio(Number(e.target.value))} className="w-full accent-blue-600"/>
+        </div>
+
+        <div className="mb-4">
+            <label className="flex justify-between text-sm font-semibold mb-1 text-gray-700">
+                <span>Output Volume</span>
+                <span>x{outputVolume.toFixed(2)}</span>
+            </label>
+            <input type="range" min="1.0" max="5.0" step="0.1" value={outputVolume} onChange={e => setOutputVolume(Number(e.target.value))} className="w-full accent-black"/>
         </div>
 
         <button 

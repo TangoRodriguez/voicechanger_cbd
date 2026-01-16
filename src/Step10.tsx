@@ -130,6 +130,7 @@ const VoiceChangerStep10 = () => {
   const [pitchShiftRatio, setPitchShiftRatio] = useState(1.45); 
   const [formantShiftRatio, setFormantShiftRatio] = useState(1.0); // Step 10 often just shifts pitch
   const [lpcOrder, setLpcOrder] = useState(32); 
+  const [outputVolume, setOutputVolume] = useState(1.0);
   
   // Processing State
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
@@ -391,7 +392,16 @@ const VoiceChangerStep10 = () => {
     // Step 10 usually assumes constant frame rate
     const finalData = outputData.slice(0, outPtr);
 
-    // Normalize
+    // Apply Volume Gain
+    // Simple clipping protection
+    for(let i=0; i<finalData.length; i++) {
+        let s = finalData[i] * outputVolume;
+        if(s > 0.99) s = 0.99;
+        if(s < -0.99) s = -0.99;
+        finalData[i] = s;
+    }
+
+    // Normalize (Optional, but Step 10 often explodes without it. We'll rely on the manual volume)
     let maxPeak = 0;
     let hasNaN = false;
     for(let i=0; i<finalData.length; i++) {
@@ -510,6 +520,13 @@ const VoiceChangerStep10 = () => {
                     <span>{lpcOrder}</span>
                 </label>
                 <input type="range" min="16" max="64" step="4" value={lpcOrder} onChange={e => setLpcOrder(Number(e.target.value))} className="w-full accent-gray-600"/>
+            </div>
+            <div>
+                <label className="flex justify-between text-sm font-semibold mb-1 text-gray-700">
+                    <span>Output Volume (Fixed)</span>
+                    <span>x{outputVolume.toFixed(2)}</span>
+                </label>
+                <input type="range" min="1.0" max="5.0" step="0.1" value={outputVolume} onChange={e => setOutputVolume(Number(e.target.value))} className="w-full accent-black"/>
             </div>
         </div>
 
