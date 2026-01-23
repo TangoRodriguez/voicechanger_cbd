@@ -34,7 +34,9 @@ const bufferToWav = (buffer: AudioBuffer) => {
 const SAMPLES = [
     { name: 'Sample 1', file: 'game-over-deep-male-voice-clip-352695.mp3' },
     { name: 'Sample 2', file: 'good-boy-male-voice-praise-352699.mp3' },
-    { name: 'Sample 3', file: 'medieval-gamer-voice-why-would-you-not-subscribe-226580.mp3' }
+    { name: 'Sample 3', file: 'medieval-gamer-voice-why-would-you-not-subscribe-226580.mp3' },
+    { name: 'Sample 4', file: 'onizawa.wav' },
+    { name: 'Sample 5', file: 'chiharu.wav' }
 ];
 
 // --- Signal Processing Helpers ---
