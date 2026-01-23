@@ -686,7 +686,7 @@ const VoiceChangerStep14 = () => {
                 </button>
             )}
             <span className="text-gray-300 self-center">|</span>
-            <input type="file" accept="audio/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+            <input type="file" accept="audio/*,.wav" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
             <button onClick={() => fileInputRef.current?.click()} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 text-sm">
                 <FileAudio className="w-4 h-4" /> File
             </button>
