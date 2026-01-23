@@ -667,7 +667,7 @@ const VoiceChangerStep14 = () => {
       <header className="mb-6 border-b pb-4">
         <h1 className="text-2xl font-bold flex items-center gap-2 text-indigo-600">
           <User className="w-6 h-6 text-green-500" />
-          Organic Voice (Soft Resonance) (v2)
+          Organic Voice (Soft Resonance) (v2.1 - with Samples)
         </h1>
         <p className="text-gray-600 mt-2 text-sm">
           Reduces resonance sharpness (bandwidth expansion) and pitch-syncs breath noise to eliminate buzzer-like artifacts and create a human-like texture.
